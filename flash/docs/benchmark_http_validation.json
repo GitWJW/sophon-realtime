@@ -1,0 +1,87 @@
+{
+  "scope": "HTTP benchmark client smoke validation; not a hardware comparison",
+  "server_configuration_recorded": false,
+  "mock_tests_original": {
+    "methods": 5,
+    "passed": true
+  },
+  "runs": {
+    "multi-arrival20": {
+      "success": 20,
+      "total": 20,
+      "wall_s": 14.85168485995382,
+      "peak_inflight": 12,
+      "first_audio_received_s": {
+        "p50": 1.0410785998683423,
+        "p90": 1.191718657920137,
+        "p95": 1.2065214652335272
+      },
+      "first_audio_decoded_s": {
+        "p50": 1.0413183050695807,
+        "p90": 1.191943194111809,
+        "p95": 1.206759960274212
+      },
+      "stall_s": {
+        "p50": 1.0332250100094824,
+        "p90": 1.9456776068694892,
+        "p95": 2.087868431856856
+      },
+      "total_output_audio_s": 101.44000000000001,
+      "audio_seconds_per_s": 6.830201485995942,
+      "requests_per_s": 1.3466485579644993
+    },
+    "multi-c4": {
+      "success": 20,
+      "total": 20,
+      "wall_s": 26.18463040003553,
+      "peak_inflight": 4,
+      "first_audio_received_s": {
+        "p50": 0.9963975350838155,
+        "p90": 1.1370671122334899,
+        "p95": 1.17254264135845
+      },
+      "first_audio_decoded_s": {
+        "p50": 0.9966492101084441,
+        "p90": 1.1373108999803663,
+        "p95": 1.1728074359009042
+      },
+      "stall_s": {
+        "p50": 0.7100594949908554,
+        "p90": 1.0711486838944255,
+        "p95": 1.0922435357654467
+      },
+      "total_output_audio_s": 108.48,
+      "audio_seconds_per_s": 4.142888341087786,
+      "requests_per_s": 0.7638068475456832
+    },
+    "single-smoke": {
+      "success": 5,
+      "total": 5,
+      "wall_s": 21.59982532961294,
+      "peak_inflight": 1,
+      "first_audio_received_s": {
+        "p50": 0.6227045198902488,
+        "p90": 0.6514039877802134,
+        "p95": 0.6578980437479913
+      },
+      "first_audio_decoded_s": {
+        "p50": 0.6230862298980355,
+        "p90": 0.6517857877537608,
+        "p95": 0.6582705837674439
+      },
+      "stall_s": {
+        "p50": 0.7442645799554882,
+        "p90": 0.997857088241726,
+        "p95": 1.0710863841883835
+      },
+      "total_output_audio_s": 28.240000000000002,
+      "audio_seconds_per_s": 1.3074179799631764,
+      "requests_per_s": 0.23148335339291365
+    }
+  },
+  "local_regression": {
+    "methods": 8,
+    "passed": true,
+    "note": "Includes load integration; scheduling deadline recheck added after server smoke runs."
+  }
+}
