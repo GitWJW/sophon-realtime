@@ -126,3 +126,11 @@ subsequently confirmed that all twelve updated tests passed on the server,
 along with real-endpoint regressions of 5/5 single-input requests and 20/20
 staggered multi-input requests. These final outcomes are based on tester
 confirmation; no new latency figures or pooled percentiles are claimed.
+
+## Warmup option consistency
+
+Warmup requests use the same event-size limit, playback-buffer setting and audible
+threshold as measured requests. The local suite now has thirteen passing tests,
+including a non-default event limit that rejects warmup before measurement, then
+allows warmup and measurement when increased. Warmups remain excluded from totals.
+The previously recorded twelve-test server result predates this change; the tester subsequently confirmed thirteen passing server tests and 5/5 measured endpoint requests with three warmups and a 32 MiB event limit.

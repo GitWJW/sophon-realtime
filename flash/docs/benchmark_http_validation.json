@@ -102,5 +102,11 @@
       "finite floating-point CLI validation"
     ],
     "server_evidence": "Tester confirmation; final parser-fix raw results are not included."
+  },
+  "warmup_option_regression": {
+    "local_test_methods": 13,
+    "local_tests_passed": true,
+    "server_regression": "Tester confirmed 13 tests passed and 5/5 measured endpoint requests succeeded with 3 warmups and a 32 MiB event limit.",
+    "scope": "Non-default event cap applies to warmup; measured totals exclude warmup."
   }
 }

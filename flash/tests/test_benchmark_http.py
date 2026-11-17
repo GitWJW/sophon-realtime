@@ -48,7 +48,7 @@ class BenchmarkTests(unittest.IsolatedAsyncioTestCase):
                     await resp.write(raw[i:i+17])
                 await resp.write_eof()
             except ConnectionResetError:
-                if self.mode != 'large':
+                if self.mode not in ('large', 'normal'):
                     raise
             return resp
         @web.middleware
@@ -163,6 +163,28 @@ class BenchmarkTests(unittest.IsolatedAsyncioTestCase):
                     self.assertAlmostEqual(r['scheduled_start_s'],expected,places=5)
                     self.assertGreaterEqual(r['actual_start_s']+1e-6,r['scheduled_start_s'])
                     self.assertGreaterEqual(r['send_lag_s'],0)
+
+    async def test_warmup_respects_event_limit(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            sf.write(root/'x.wav',np.ones(1600)*.1,16000)
+            (root/'prompt.json').write_text(json.dumps({'zh':'test'}))
+            a=argparse.Namespace(system_prompt=str(root/'prompt.json'),
+                wav=str(root/'x.wav'),manifest=None,language='zh',
+                out=str(root/'small'),timeout=3,url=self.url,model=None,
+                seed=0,voice='chelsie',max_tokens=10,warmup=1,requests=1,
+                selection='round-robin',concurrency=1,arrival_window=None,
+                initial_buffer=0,audible_threshold=.02,max_event_bytes=64)
+            with self.assertRaisesRegex(RuntimeError,'warmup failed.*max_event_bytes'):
+                await b.run(a)
+            self.assertFalse((root/'small/summary.json').exists())
+            a.out=str(root/'large')
+            a.max_event_bytes=65536
+            with contextlib.redirect_stdout(io.StringIO()):
+                await b.run(a)
+            result=json.loads((root/'large/summary.json').read_text())
+            self.assertEqual(result['success'],1)
+            self.assertEqual(result['total'],1)  # warmup excluded
 
     async def test_bounded_load_and_input_selection(self):
         await self.exercise_load()

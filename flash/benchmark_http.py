@@ -191,7 +191,11 @@ async def run(a):
                                     dict(type='input_audio',input_audio=dict(format='wav',data=x['data']))])])
         bodies=[body(x) for x in inputs]
         for i in range(a.warmup):
-            r=await request(session,a.url.rstrip('/'),bodies[i%len(inputs)],f'warmup-{i}')
+            r=await request(
+                session, a.url.rstrip('/'), bodies[i % len(inputs)], f'warmup-{i}',
+                initial_buffer=a.initial_buffer, threshold=a.audible_threshold,
+                max_event_bytes=getattr(a, 'max_event_bytes', 16 * 1024 * 1024),
+            )
             if not r['success']:
                 raise RuntimeError(f'warmup failed: {r["error_message"]}')
         indices=[rng.randrange(len(inputs)) if a.selection=='random' else i%len(inputs) for i in range(a.requests)]
