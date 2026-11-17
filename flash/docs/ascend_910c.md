@@ -1,10 +1,11 @@
 # Experimental Flash deployment on Ascend 910C
 
-This recipe documents historical HTTP streaming inference experiments with the
+This recipe documents HTTP streaming inference experiments with the
 32B Flash model on one physical 910C card exposing two NPU devices. It does not
 establish support for every Flash variant or full-duplex multi-session serving.
-The checked-in configuration is a starting point for validation on current main;
-the measurements below have not been reproduced with the 1.4.0 Talker changes.
+The configuration was exercised with the 1.4.0 plugin at PR revision
+`5c73a54fccfe9b8341fba46d7146448f18c64f1e`. Historical and current-revision
+measurements are reported separately below.
 
 ## Tested environment
 
@@ -29,7 +30,8 @@ FP8 E4M3 per-output-channel weights and dynamic per-token FP8 activations. In th
 tested runtime, `aclnnDynamicQuantV2` rejected FP8 output and listed integer output
 types. Merely copying an FP8 tensor to NPU did not establish executable FP8 support.
 
-Use a separately validated, unquantized BF16 checkpoint with the original layout:
+This is not an end-to-end checkpoint conversion guide: the startup steps require
+a separately prepared and validated, unquantized BF16 checkpoint with the original layout:
 
 ```text
 model/
@@ -127,6 +129,57 @@ Warm up before recording latency. Listen to the output, check nonempty audio, an
 test long replies as well as short ones. A healthy HTTP endpoint alone is not a
 successful model execution check.
 
+Check the output structure separately (this does not replace listening):
+
+```bash
+python - <<'PY'
+import numpy as np
+import soundfile as sf
+x, sr = sf.read("reply.wav")
+assert sr == 24000
+assert len(x) > 2400
+assert np.isfinite(x).all()
+assert np.abs(x).max() > 1e-5
+print("Audio structure check passed; listen to verify quality.")
+PY
+```
+
+## Current-revision validation (2026-11-17)
+
+The environment freeze identifies the Flash plugin at
+`5c73a54fccfe9b8341fba46d7146448f18c64f1e` (1.4.0). Engine revisions match the
+ones recorded above. Archived version-file paths point to `cann-9.1.0`, but their
+contents, the host driver version and image digest were not captured; the exact
+CANN patch/build remains unverified.
+
+Five consecutive audio-input requests returned 24 kHz WAV output, with durations
+of 3.44–8.32 seconds. A separate text-input long-reply probe returned 631 text
+characters and 122.08 seconds of 24 kHz audio. The server logged three Talker
+segment restarts for that request. This exercises the new segmentation path;
+listening-based quality, continuity and semantic completeness are not established
+by these logs alone.
+
+| In-flight requests | Requests | First audio P50 / P90 (s) | Stall P50 / P90 (s) | Measured run time (s) |
+| --- | --- | --- | --- | --- |
+| 1 | 40/40 | 0.619 / 0.659 | 0.574 / 0.814 | 157.65 |
+| 4 | 40/40 | 0.905 / 0.993 | 0.621 / 1.027 | 45.23 |
+| 8 | 40/40 | 1.039 / 1.389 | 0.916 / 1.477 | 27.85 |
+| 4, extended run | 200/200 | 0.916 / 1.014 | 0.744 / 1.093 | 300.69 |
+
+These 320 measured HTTP requests succeeded according to the client (audio present
+and stream terminated normally). This does not certify audio quality or answer
+correctness. The extended run lasted approximately five minutes, not ten minutes.
+The supplied server log contained no `ERROR`, `Traceback`, `out of memory`, or
+`EngineDeadError` matches; it did contain warnings, so this is not a warning-free
+runtime claim. See the [compact measurement record](ascend_910c_validation.json).
+
+The external benchmark used `hello_zh.wav`, the repository Chinese system prompt,
+voice `chelsie`, `max_tokens=300`, temperature 0.7 and top_p 0.9. Each run used
+five unmeasured warmups. Concurrency was a client-side in-flight request cap; it
+was not a duplex session count. Benchmark tooling is outside this PR, so the
+record is evidence of the reported run rather than a complete reproducibility
+bundle. Metric definitions are given below with the historical results.
+
 ## Historical HTTP results
 
 One test per point, 40 successful requests per point, repeated `hello_zh.wav`,
@@ -149,8 +202,8 @@ requests/second alone is not a controlled throughput comparison.
 
 ## Limitations and next validation
 
-- Re-run current-main HTTP tests: single request, concurrent requests, long reply
-  segmentation, repeated requests and sustained load. Record exact commits.
+- Revalidate after engine/plugin changes. Multi-input runs, repeated load trials,
+  longer soak tests and listening-based quality checks remain to be completed.
 - Keep `enforce_eager: true` initially. Graph execution and INT8 conversion are
   separate validation tasks.
 - Preserve the existing GPU configuration. This configuration is for the tested
