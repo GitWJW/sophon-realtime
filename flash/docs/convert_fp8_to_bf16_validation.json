@@ -1,0 +1,43 @@
+{
+  "scope": "Restricted converter correctness and functional serving validation",
+  "conversion": {
+    "fp8_weights": 448,
+    "output_tensors": 1359,
+    "thinker_tensor_bytes": 67119747296,
+    "config_sha256": "b48dc9247bf75aa54ba2af1109ae9e2e5414db54ce0331dba8169ccd6f4405ba",
+    "method": "BF16(float32(FP8 weight) * float32(per-output-channel scale))",
+    "limitation": "Approximate reconstruction, not original pre-quantization BF16 weights.",
+    "status": "complete"
+  },
+  "synthetic_tests": {
+    "methods": 4,
+    "passed_on_server": true,
+    "local_execution": "not run: torch unavailable"
+  },
+  "output_check": {
+    "bf16_tensors": 1359,
+    "index_matches": true
+  },
+  "reference_comparison": {
+    "exactly_equal_tensors": 1359,
+    "reference": "Previously deployed BF16 reconstruction; not original pre-quantization weights"
+  },
+  "inference": {
+    "requests": 5,
+    "replies_received": 5,
+    "first_audio_s": [
+      10.66,
+      0.91,
+      0.63,
+      0.62,
+      0.63
+    ],
+    "performance_benchmark": false
+  },
+  "manual_listening": "Tester confirmed checks passed; not a formal speech-quality evaluation.",
+  "limitations": [
+    "Source model immutable revision not captured",
+    "Complete runtime provenance not supplied in this bundle",
+    "No original pre-quantization reference weights"
+  ]
+}

@@ -110,3 +110,8 @@ python client_example.py --wav my_question.wav --lang en --voice alice
 `model/` (thinker, voice stage, voices) · `plugin/` (vLLM-Omni plugin `sophon_realtime`) · `config/` (deploy config, system prompt, VAD) · `examples/`
 
 License: code Apache-2.0; model weights Apache-2.0, see `NOTICE` for sources.
+
+## Experimental BF16 reconstruction
+
+See [restricted FP8-to-BF16 reconstruction](docs/convert_fp8_to_bf16.md)
+for supported checkpoint formats, validation steps and limitations.
