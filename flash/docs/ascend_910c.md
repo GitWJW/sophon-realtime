@@ -148,16 +148,28 @@ PY
 
 The environment freeze identifies the Flash plugin at
 `5c73a54fccfe9b8341fba46d7146448f18c64f1e` (1.4.0). Engine revisions match the
-ones recorded above. Archived version-file paths point to `cann-9.1.0`, but their
-contents, the host driver version and image digest were not captured; the exact
-CANN patch/build remains unverified.
+ones recorded above. Additional environment files were collected on
+2026-11-17 at 04:10:09 UTC:
+
+- Reported container image: `quay.io/ascend/vllm-omni:v0.30.0-a3`.
+- Driver package: `26.1.1`; Ascend HAL: `7.35.23`.
+- Driver internal version: `V100R001C10SPC009B220`.
+- CANN OPP and compiler: `9.1.0`, both with package timestamp
+  `20260730_231653901`.
+- Toolkit path resolves to `/usr/local/Ascend/cann-9.1.0`.
+
+These files describe the environment at collection time. They do not independently
+prove that no component changed since the benchmark. The image tag was confirmed
+by the tester; its immutable repository digest remains unrecorded.
 
 Five consecutive audio-input requests returned 24 kHz WAV output, with durations
 of 3.44–8.32 seconds. A separate text-input long-reply probe returned 631 text
 characters and 122.08 seconds of 24 kHz audio. The server logged three Talker
 segment restarts for that request. This exercises the new segmentation path;
 listening-based quality, continuity and semantic completeness are not established
-by these logs alone.
+by these logs alone. The tester reports completing manual listening; the detailed
+outcome has not yet been recorded here, so no clean-audio or formal quality pass
+is claimed.
 
 | In-flight requests | Requests | First audio P50 / P90 (s) | Stall P50 / P90 (s) | Measured run time (s) |
 | --- | --- | --- | --- | --- |
@@ -203,7 +215,7 @@ requests/second alone is not a controlled throughput comparison.
 ## Limitations and next validation
 
 - Revalidate after engine/plugin changes. Multi-input runs, repeated load trials,
-  longer soak tests and listening-based quality checks remain to be completed.
+  longer soak tests and recording the manual-listening outcome remain pending.
 - Keep `enforce_eager: true` initially. Graph execution and INT8 conversion are
   separate validation tasks.
 - Preserve the existing GPU configuration. This configuration is for the tested

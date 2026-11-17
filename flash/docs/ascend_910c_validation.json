@@ -130,5 +130,22 @@
         "arrival_window": null
       }
     }
+  },
+  "additional_environment": {
+    "collected_at": "2026-11-17T04:10:09+00:00",
+    "image_tag": "quay.io/ascend/vllm-omni:v0.30.0-a3",
+    "image_digest": null,
+    "driver_package": "26.1.1",
+    "ascend_hal": "7.35.23",
+    "driver_internal": "V100R001C10SPC009B220",
+    "cann_opp": "9.1.0",
+    "cann_compiler": "9.1.0",
+    "cann_package_timestamp": "20260730_231653901",
+    "note": "Collected after benchmark; unchanged environment not independently established."
+  },
+  "manual_listening": {
+    "completed_reported_by_tester": true,
+    "outcome": "not yet recorded",
+    "formal_quality_evaluation": false
   }
 }
