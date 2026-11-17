@@ -145,7 +145,7 @@
   },
   "manual_listening": {
     "completed_reported_by_tester": true,
-    "outcome": "not yet recorded",
+    "outcome": "Tester reported no obvious noise, repetition, truncation, or disruptive segment transitions; limited subjective check.",
     "formal_quality_evaluation": false
   }
 }

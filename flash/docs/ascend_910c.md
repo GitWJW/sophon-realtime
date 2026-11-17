@@ -167,9 +167,9 @@ of 3.44–8.32 seconds. A separate text-input long-reply probe returned 631 text
 characters and 122.08 seconds of 24 kHz audio. The server logged three Talker
 segment restarts for that request. This exercises the new segmentation path;
 listening-based quality, continuity and semantic completeness are not established
-by these logs alone. The tester reports completing manual listening; the detailed
-outcome has not yet been recorded here, so no clean-audio or formal quality pass
-is claimed.
+by these logs alone. The tester completed manual listening and reported no obvious noise, repetition,
+truncation, or disruptive segment transitions. This is a limited subjective check
+of the supplied samples, not a formal speech-quality evaluation.
 
 | In-flight requests | Requests | First audio P50 / P90 (s) | Stall P50 / P90 (s) | Measured run time (s) |
 | --- | --- | --- | --- | --- |
@@ -215,7 +215,7 @@ requests/second alone is not a controlled throughput comparison.
 ## Limitations and next validation
 
 - Revalidate after engine/plugin changes. Multi-input runs, repeated load trials,
-  longer soak tests and recording the manual-listening outcome remain pending.
+  longer soak tests and formal speech-quality evaluation remain pending.
 - Keep `enforce_eager: true` initially. Graph execution and INT8 conversion are
   separate validation tasks.
 - Preserve the existing GPU configuration. This configuration is for the tested
