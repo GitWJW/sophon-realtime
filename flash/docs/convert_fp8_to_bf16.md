@@ -84,3 +84,30 @@ the two conversions, not agreement with unavailable pre-quantization weights.
 The bundle does not pin an immutable source model revision or a complete
 container/runtime environment; the config hash alone is not a weight checksum.
 Formal quality equivalence and arbitrary checkpoint-format support are not claimed.
+
+## Additional input guards
+
+Explicit nonempty transform metadata is rejected, including `transform_config`
+and input/output/weight transform declarations in the thinker configuration.
+The utility does not attempt to undo Hadamard or other weight/activation transforms.
+This guard is conservative; it is not a claim to detect every future format.
+
+During conversion, all thinker output tensors (including preserved BF16 tensors)
+are checked for NaN/Inf in blocks of at most 1,048,576 elements. A failure retains
+an incomplete directory and does not publish a completed output. This check does
+not inspect copied Talker/voice assets. `--check-only` still validates metadata
+and scales without scanning every source weight value, so a successful preflight
+is not a complete finite-weight validation.
+
+All seven updated synthetic test methods passed on the server. The supported
+full checkpoint also completed conversion with these guards enabled: 448 FP8
+matrices, 1,359 BF16 tensors and 67,119,747,296 tensor bytes. Independent checks
+confirmed that all 1,359 thinker output tensors were finite and that the index
+matched the output. The source config hash matched the earlier conversion.
+
+The earlier tensor-equality comparison and five-request inference/listening checks
+predate these guards; they were not rerun on the new guarded output in the supplied
+bundle. The reconstruction formula is unchanged. Expected conversion-failure
+messages in the synthetic test log are negative-test results, not failures of the
+full-checkpoint run. Local functional execution is still not claimed because the
+local authoring environment lacks torch.

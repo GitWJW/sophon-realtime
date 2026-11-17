@@ -12,7 +12,21 @@ from safetensors import safe_open
 from safetensors.torch import save_file
 
 
+def reject_transforms(value, path='config'):
+    """Fail closed for explicit transform metadata at any configuration level."""
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in ('transform_config', 'transforms', 'input_transform',
+                       'output_transform', 'weight_transform') and child:
+                raise ValueError(f'unsupported transform configuration: {path}.{key}')
+            reject_transforms(child, f'{path}.{key}')
+    elif isinstance(value, list):
+        for i, child in enumerate(value):
+            reject_transforms(child, f'{path}[{i}]')
+
+
 def validate_config(config):
+    reject_transforms(config)
     q = config.get('quantization_config', {})
     if q.get('quant_method') != 'compressed-tensors' or q.get('format') != 'float-quantized':
         raise ValueError('only compressed-tensors float-quantized checkpoints are supported')
@@ -84,6 +98,16 @@ def inventory(source):
     return config, config_path, entries, pairs, output_bytes
 
 
+def require_finite(tensor, name, block_elements=1024 * 1024):
+    """Check thinker output in bounded blocks without a full FP32 copy."""
+    if block_elements < 1:
+        raise ValueError('block_elements must be positive')
+    flat = tensor.reshape(-1)
+    for start in range(0, flat.numel(), block_elements):
+        if not torch.isfinite(flat[start:start + block_elements]).all():
+            raise ValueError(f'non-finite output tensor: {name}')
+
+
 def dequantize(weight, scale, rows=256):
     if not torch.isfinite(scale.float()).all() or not (scale > 0).all():
         raise ValueError('scales must be finite and positive')
@@ -147,6 +171,7 @@ def convert(src, dst, check_only=False):
                         scale_key=pairs[key]
                         with safe_open(str(entries[scale_key]['shard']),framework='pt',device='cpu') as other:
                             weight=dequantize(weight,other.get_tensor(scale_key))
+                    require_finite(weight, key)
                     output[key]=weight.contiguous()
                     mapping[key]=shard.name
             if output:

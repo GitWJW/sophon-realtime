@@ -56,6 +56,51 @@ class ConversionTests(unittest.TestCase):
             self.assertFalse(dst.exists())
             with self.assertRaises(ValueError):c.convert(src,src/'nested',True)
 
+    def test_reject_transform_metadata(self):
+        for location in ('root', 'quantization', 'group', 'weights'):
+            with self.subTest(location=location), tempfile.TemporaryDirectory() as d:
+                root=Path(d);src,_,_=fixture(root)
+                p=src/'thinker/config.json';config=json.loads(p.read_text())
+                target=config
+                if location != 'root':
+                    target=config['quantization_config']
+                if location in ('group','weights'):
+                    target=target['config_groups']['g']
+                if location == 'weights':
+                    target=target['weights']
+                target['transform_config']={'type':'hadamard'}
+                p.write_text(json.dumps(config))
+                with self.assertRaisesRegex(ValueError,'unsupported transform'):
+                    c.convert(src,root/'out',True)
+                self.assertFalse((root/'out').exists())
+                self.assertEqual(list(root.glob('out.incomplete-*')),[])
+
+    def test_nonfinite_preserved_bf16(self):
+        for bad in (float('nan'),float('inf'),float('-inf')):
+            with self.subTest(value=bad), tempfile.TemporaryDirectory() as d:
+                root=Path(d);src,w,_=fixture(root);dst=root/'out'
+                save_file({'layer.weight':w,'bias':torch.tensor([1.,bad],dtype=torch.bfloat16)},
+                          str(src/'thinker/a.safetensors'))
+                # Preflight deliberately does not scan all weight values.
+                c.convert(src,dst,True)
+                with self.assertRaisesRegex(ValueError,'non-finite output tensor: bias'):
+                    c.convert(src,dst)
+                self.assertFalse(dst.exists())
+                incomplete=list(root.glob('out.incomplete-*'))
+                self.assertEqual(len(incomplete),1)
+                self.assertFalse((incomplete[0]/'BF16_CONVERSION.json').exists())
+                self.assertEqual(load_file(str(src/'thinker/a.safetensors'))['layer.weight'].dtype,
+                                 torch.float8_e4m3fn)
+
+    def test_finite_block_boundaries(self):
+        x=torch.ones(11,dtype=torch.bfloat16)
+        c.require_finite(x,'valid',block_elements=4)
+        for i in (0,4,10):
+            y=x.clone();y[i]=float('nan')
+            with self.assertRaisesRegex(ValueError,'non-finite output tensor'):
+                c.require_finite(y,'bad',block_elements=4)
+        c.require_finite(torch.tensor(1.,dtype=torch.bfloat16),'scalar')
+
     def test_nonfinite_output(self):
         w=torch.tensor([[float('nan')]]).to(torch.float8_e4m3fn)
         with self.assertRaises(ValueError):c.dequantize(w,torch.ones(1,1))

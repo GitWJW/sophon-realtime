@@ -39,5 +39,32 @@
     "Source model immutable revision not captured",
     "Complete runtime provenance not supplied in this bundle",
     "No original pre-quantization reference weights"
-  ]
+  ],
+  "additional_guards": {
+    "changes": [
+      "reject explicit nonempty transform metadata",
+      "blockwise finite check for all thinker output tensors"
+    ],
+    "test_methods": 7,
+    "local_functional_execution": "not run: torch unavailable",
+    "server_regression": {
+      "synthetic_test_methods": 7,
+      "synthetic_tests_passed": true,
+      "full_conversion_completed": true,
+      "fp8_matrices": 448,
+      "bf16_output_tensors": 1359,
+      "thinker_tensor_bytes": 67119747296,
+      "all_thinker_outputs_finite": true,
+      "index_matches": true,
+      "source_config_sha256": "b48dc9247bf75aa54ba2af1109ae9e2e5414db54ce0331dba8169ccd6f4405ba",
+      "evidence": [
+        "unit-tests-guards.log",
+        "preflight-guards.log",
+        "conversion-guards.log",
+        "output-check-guards.log"
+      ],
+      "inference_rerun_on_guarded_output": false
+    },
+    "note": "Earlier equality and inference validation predates the guards; new logs validate guarded conversion and output finite/index checks."
+  }
 }
