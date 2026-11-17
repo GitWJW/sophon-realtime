@@ -18,8 +18,8 @@ spec=importlib.util.spec_from_file_location('bench',Path(__file__).parents[1]/'b
 b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
 
 
-def audio_event():
-    out=io.BytesIO();sf.write(out,np.ones(1600,dtype=np.float32)*.1,16000,format='WAV')
+def audio_event(samples=1600):
+    out=io.BytesIO();sf.write(out,np.ones(samples,dtype=np.float32)*.1,16000,format='WAV')
     return json.dumps({'modality':'audio','choices':[{'delta':{'content':base64.b64encode(out.getvalue()).decode()}}]})
 
 
@@ -38,13 +38,19 @@ class BenchmarkTests(unittest.IsolatedAsyncioTestCase):
             elif self.mode=='bad':payload='data: {"modality":"audio","choices":[{"delta":{"content":"!"}}]}\n\n'
             elif self.mode=='text':payload='data: {"choices":[]}\n\ndata: [DONE]\n\n'
             else:
-                event=audio_event()
+                event=audio_event(96000 if self.mode == "large" else 1600)
                 # Valid multiline JSON data plus fragmented transport writes.
                 payload=': comment\n'+'data: '+event[:1]+'\n'+'data: '+event[1:]+'\n\n'
                 if self.mode!='truncated':payload+='data: [DONE]\n\n'
             raw=payload.encode()
-            for i in range(0,len(raw),17):await resp.write(raw[i:i+17])
-            await resp.write_eof();return resp
+            try:
+                for i in range(0,len(raw),17):
+                    await resp.write(raw[i:i+17])
+                await resp.write_eof()
+            except ConnectionResetError:
+                if self.mode != 'large':
+                    raise
+            return resp
         @web.middleware
         async def count_active(req, handler):
             if req.path != '/v1/chat/completions':
@@ -80,6 +86,45 @@ class BenchmarkTests(unittest.IsolatedAsyncioTestCase):
                         self.assertGreaterEqual(r['first_audio_decoded_s'],r['first_audio_received_s'])
                     if mode=='truncated':
                         self.assertIsNotNone(r['first_audio_received_s'])
+
+    async def test_large_audio_event(self):
+        self.mode='large'
+        async with aiohttp.ClientSession() as session:
+            r=await b.request(session,self.url,{},'large')
+        self.assertTrue(r['success'], r['error_message'])
+        self.assertAlmostEqual(r['audio_duration_s'],6.)
+
+    async def test_oversized_audio_event(self):
+        self.mode='large'
+        async with aiohttp.ClientSession() as session:
+            r=await b.request(session,self.url,{},'oversized',max_event_bytes=65536)
+        self.assertFalse(r['success'])
+        self.assertIn('max_event_bytes',r['error_message'])
+
+    async def test_sse_bounds_and_utf8(self):
+        class Stream:
+            def __init__(self, raw): self.raw=raw
+            async def iter_chunked(self, size):
+                for i in range(0,len(self.raw),1):
+                    yield self.raw[i:i+1]
+        raw='data: 浣犲ソ\r\n\r\n'.encode()
+        self.assertEqual([x async for x in b.sse_events(Stream(raw))],['浣犲ソ'])
+        for raw in (b'data: '+b'x'*100, b':'+b'x'*100+b'\n\n'):
+            with self.assertRaisesRegex(ValueError,'max_event_bytes'):
+                [x async for x in b.sse_events(Stream(raw),32)]
+
+    def test_nonfinite_cli(self):
+        for option in ('--timeout','--initial-buffer','--audible-threshold','--arrival-window'):
+            for value in ('nan','inf','-inf'):
+                with self.subTest(option=option,value=value):
+                    with contextlib.redirect_stderr(io.StringIO()):
+                        with self.assertRaises(SystemExit) as cm:
+                            b.parse_args(['--wav','unused.wav','--out','unused',f'{option}={value}'])
+                    self.assertEqual(cm.exception.code,2)
+        for value in ('0','-1'):
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    b.parse_args(['--wav','unused.wav','--out','unused','--max-event-bytes',value])
 
     async def test_timeout(self):
         self.mode='timeout'

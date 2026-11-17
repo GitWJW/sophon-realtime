@@ -92,5 +92,15 @@
     "successful_requests": 20,
     "total_requests": 20,
     "scope": "Updated scheduling code exercised; latency percentiles not pooled with earlier runs."
+  },
+  "parser_numeric_regression": {
+    "local_test_methods": 12,
+    "local_tests_passed": true,
+    "server_regression": "Tester confirmed all 12 updated tests passed; real-endpoint regression completed 5/5 single-input requests and 20/20 staggered multi-input requests.",
+    "changes": [
+      "bounded incremental SSE parser",
+      "finite floating-point CLI validation"
+    ],
+    "server_evidence": "Tester confirmation; final parser-fix raw results are not included."
   }
 }

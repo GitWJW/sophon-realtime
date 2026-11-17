@@ -5,6 +5,7 @@ import base64
 import hashlib
 import io
 import json
+import math
 import random
 import time
 from pathlib import Path
@@ -14,18 +15,40 @@ import numpy as np
 import soundfile as sf
 
 
-async def sse_events(stream):
-    """Yield SSE data after a blank-line boundary; transport fragments are irrelevant."""
+async def sse_events(stream, max_event_bytes=16 * 1024 * 1024):
+    """Parse LF/CRLF SSE incrementally without StreamReader's line limit.
+
+    Limit raw event bytes (including comments/fields) and incomplete lines.
+    UTF-8 is decoded only after a complete line, so transport splits are safe.
+    """
+    if max_event_bytes < 1:
+        raise ValueError('max_event_bytes must be positive')
+    pending = bytearray()
     data = []
-    async for raw in stream:
-        line = raw.decode('utf-8').rstrip('\r\n')
-        if not line:
-            if data:
-                yield '\n'.join(data)
+    event_bytes = 0
+    async for chunk in stream.iter_chunked(16 * 1024):
+        pending.extend(chunk)
+        while True:
+            boundary = pending.find(b'\n')
+            if boundary < 0:
+                if event_bytes + len(pending) > max_event_bytes:
+                    raise ValueError('SSE event exceeds max_event_bytes')
+                break
+            size = boundary + 1
+            if event_bytes + size > max_event_bytes:
+                raise ValueError('SSE event exceeds max_event_bytes')
+            raw = bytes(pending[:boundary])
+            del pending[:size]
+            line = raw.removesuffix(b'\r').decode('utf-8')
+            event_bytes += size
+            if not line:
+                if data:
+                    yield '\n'.join(data)
                 data = []
-        elif line.startswith('data:'):
-            value = line[5:]
-            data.append(value[1:] if value.startswith(' ') else value)
+                event_bytes = 0
+            elif line.startswith('data:'):
+                value = line[5:]
+                data.append(value[1:] if value.startswith(' ') else value)
     # Unclosed events are intentionally not dispatched.
 
 
@@ -74,7 +97,7 @@ def load_inputs(wav, manifest, language, prompts):
     return prepared
 
 
-async def request(session, url, body, ident, initial_buffer=0., threshold=.02):
+async def request(session, url, body, ident, initial_buffer=0., threshold=.02, max_event_bytes=16 * 1024 * 1024):
     start = time.perf_counter()
     row = dict(request_id=ident, success=False, error_type=None, error_message=None,
                first_audio_received_s=None, first_audio_decoded_s=None,
@@ -86,7 +109,7 @@ async def request(session, url, body, ident, initial_buffer=0., threshold=.02):
             if 'text/event-stream' not in response.headers.get('Content-Type', ''):
                 raise ValueError('expected text/event-stream response')
             done = False
-            async for data in sse_events(response.content):
+            async for data in sse_events(response.content, max_event_bytes):
                 received = time.perf_counter() - start
                 if data.strip() == '[DONE]':
                     done = True
@@ -184,7 +207,7 @@ async def run(a):
                 active+=1;peak=max(peak,active)
                 actual=time.perf_counter()
                 try:
-                    r=await request(session,a.url.rstrip('/'),bodies[j],str(i),a.initial_buffer,a.audible_threshold)
+                    r=await request(session,a.url.rstrip('/'),bodies[j],str(i),a.initial_buffer,a.audible_threshold,getattr(a, "max_event_bytes", 16 * 1024 * 1024))
                 finally:
                     active-=1
                 r.update(input_id=x['id'],input_sha256=x['sha256'],input_duration_s=x['duration_s'],
@@ -206,7 +229,7 @@ async def run(a):
         print(json.dumps(result,indent=2,allow_nan=False))
 
 
-def parse_args():
+def parse_args(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     g=p.add_mutually_exclusive_group(required=True)
     g.add_argument('--wav');g.add_argument('--manifest')
@@ -223,8 +246,15 @@ def parse_args():
     p.add_argument('--max-tokens',type=int,default=300)
     p.add_argument('--initial-buffer',type=float,default=0)
     p.add_argument('--audible-threshold',type=float,default=.02)
+    p.add_argument('--max-event-bytes',type=int,default=16 * 1024 * 1024)
     p.add_argument('--out',required=True)
-    a=p.parse_args()
+    a=p.parse_args(argv)
+    for name in ('timeout', 'initial_buffer', 'audible_threshold', 'arrival_window'):
+        value = getattr(a, name)
+        if value is not None and not math.isfinite(value):
+            p.error('--' + name.replace('_', '-') + ' must be finite')
+    if a.max_event_bytes < 1:
+        p.error('--max-event-bytes must be positive')
     if a.requests<1 or a.warmup<0 or (a.concurrency is not None and a.concurrency<1) or a.timeout<=0 or a.max_tokens<1 or a.initial_buffer<0 or not 0<=a.audible_threshold<=1 or (a.arrival_window is not None and a.arrival_window<0):
         p.error('invalid numeric setting')
     if a.concurrency is None and a.arrival_window is None:

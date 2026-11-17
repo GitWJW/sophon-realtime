@@ -107,3 +107,22 @@ The earlier 45-request smoke results and this final 20-request regression are
 separate runs. Their latency percentiles are not combined. The final regression
 status is based on tester confirmation; raw final-run results are not included
 in this validation record, and no additional latency figures are claimed.
+
+## Parser limits and numeric validation
+
+SSE is parsed from transport chunks with LF or CRLF line endings, without relying
+on aiohttp's line-length limit. UTF-8 characters may span transport chunks.
+`--max-event-bytes` limits each raw event, including fields, comments and incomplete
+lines; the default is 16777216 bytes (16 MiB). Oversized events are explicit request
+failures. Increase the limit deliberately for larger expected audio payloads;
+this limit does not bound all decoded waveform allocations.
+
+All floating-point CLI parameters must be finite. NaN and positive/negative
+infinity are rejected before input loading or networking. Numeric range checks
+still apply. Local regression coverage now includes large valid WAV events,
+oversized events, unterminated oversized lines, split UTF-8, and CLI validation.
+The previous eight-test server results predate these parser changes. The tester
+subsequently confirmed that all twelve updated tests passed on the server,
+along with real-endpoint regressions of 5/5 single-input requests and 20/20
+staggered multi-input requests. These final outcomes are based on tester
+confirmation; no new latency figures or pooled percentiles are claimed.
