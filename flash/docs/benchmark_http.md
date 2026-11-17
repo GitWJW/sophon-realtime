@@ -93,3 +93,17 @@ comparison or a serving-capacity guarantee. The supplied client results do not
 capture the complete server revision/configuration; reproduce with recorded server
 metadata before comparing hardware. Raw recordings and full server logs are not
 included in this PR.
+
+## Final server regression
+
+After adding the scheduled-arrival deadline recheck, the tester reported that
+all eight mock and integration tests passed on the server.
+
+A further three-input run with 20 staggered requests over 10 seconds completed
+successfully (20/20). This exercises the updated scheduling code against the
+real endpoint.
+
+The earlier 45-request smoke results and this final 20-request regression are
+separate runs. Their latency percentiles are not combined. The final regression
+status is based on tester confirmation; raw final-run results are not included
+in this validation record, and no additional latency figures are claimed.

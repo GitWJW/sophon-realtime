@@ -83,5 +83,14 @@
     "methods": 8,
     "passed": true,
     "note": "Includes load integration; scheduling deadline recheck added after server smoke runs."
+  },
+  "final_server_regression": {
+    "evidence": "Tester confirmation; raw final-run results not included.",
+    "mock_test_methods": 8,
+    "mock_tests_passed": true,
+    "workload": "three-input, 20 staggered requests over 10 seconds",
+    "successful_requests": 20,
+    "total_requests": 20,
+    "scope": "Updated scheduling code exercised; latency percentiles not pooled with earlier runs."
   }
 }
