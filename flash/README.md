@@ -111,7 +111,8 @@ python client_example.py --wav my_question.wav --lang en --voice alice
 
 License: code Apache-2.0; model weights Apache-2.0, see `NOTICE` for sources.
 
-## Experimental Ascend deployment
+## Community-maintained Ascend deployment
 
-See the [910C HTTP deployment notes](docs/ascend_910c.md) for historical validation,
-a BF16 TP2 configuration, and current-version limitations.
+See the [910C HTTP deployment notes](../community/ascend/README.md) for the
+community-maintained BF16 TP2 recipe, tested environment, validation results,
+and limitations. The core maintainers do not have Ascend hardware to test it.

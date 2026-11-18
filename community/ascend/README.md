@@ -1,4 +1,10 @@
-# Experimental Flash deployment on Ascend 910C
+# Community-maintained Flash deployment on Ascend 910C
+
+> This experimental recipe is maintained by community contributors.
+> The core maintainers do not have Ascend hardware to test it.
+> Validation applies to the checkpoint, source revisions and runtime recorded below.
+> For issues, include the model revision, runtime versions, deployment configuration
+> and relevant logs.
 
 This recipe documents HTTP streaming inference experiments with the
 32B Flash model on one physical 910C card exposing two NPU devices. It does not
@@ -22,6 +28,14 @@ The collected freeze records Sophon revision
 present. This is a historical environment record, not a clean-checkout
 reproducibility claim. Pin image digests and record host driver/CANN versions when
 reproducing; an image tag alone does not define the complete runtime.
+
+## Official BF16 checkpoint follow-up
+
+The maintainers have announced plans to publish the original BF16 thinker.
+The measurements recorded here used reconstructed BF16 thinker weights.
+Validation with the official BF16 checkpoint is pending and will be recorded
+separately once the weights are available. Existing measurements must not be
+presented as results for that checkpoint.
 
 ## Checkpoint prerequisite
 
@@ -112,7 +126,7 @@ mkdir -p logs
 vllm serve "$SOPHON_MODEL" \
   --omni --host 0.0.0.0 --port 8000 --trust-remote-code \
   --init-timeout 3000 --stage-init-timeout 3000 \
-  --deploy-config config/sophon_realtime_flash_910c_bf16_tp2.yaml \
+  --deploy-config ../community/ascend/sophon_realtime_flash_910c_bf16_tp2.yaml \
   2>&1 | tee logs/ascend-http.log
 ```
 
