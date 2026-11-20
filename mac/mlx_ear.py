@@ -26,6 +26,7 @@ class Layer(nn.Module):
 class Ear(nn.Module):
     def __init__(s, cfg):
         super().__init__(); a = cfg["audio_config"]; d = a["d_model"]; ch = a["downsample_hidden_size"]; s.a = a; s.stack = cfg["stack_factor"]
+        s.full_length = bool(cfg.get("audio_full_length", False))  # 4B: one LM token per 2 encoder frames (no Ultravox-style rounding down)
         s.conv2d1 = nn.Conv2d(1, ch, 3, 2, 1); s.conv2d2 = nn.Conv2d(ch, ch, 3, 2, 1); s.conv2d3 = nn.Conv2d(ch, ch, 3, 2, 1)
         fb = (((a["num_mel_bins"] + 1) // 2 + 1) // 2 + 1) // 2; s.conv_out = nn.Linear(ch * fb, d, bias=False)
         s.layers = [Layer(d, a["encoder_attention_heads"], a["encoder_ffn_dim"]) for _ in range(a["encoder_layers"])]
@@ -84,5 +85,6 @@ def embed_audio(ear, fe, a16k):
     for off in range(0, L, 3000):
         Lc = min(L - off, 3000); f = feats[:, off:off + 3000]
         if off > 0 and f.shape[-1] < 3000: f = np.pad(f, ((0, 0), (0, 3000 - f.shape[-1])))
-        out.append(ear.project(ear.encode(f, Lc), int(math.ceil(Lc / (8 * ear.stack)))))
+        ntok = math.ceil(_out_len(Lc) / ear.stack) if ear.full_length else math.ceil(Lc / (8 * ear.stack))
+        out.append(ear.project(ear.encode(f, Lc), int(ntok)))
     return mx.concatenate(out), feats

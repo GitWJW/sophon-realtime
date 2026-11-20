@@ -63,6 +63,10 @@ GPU=0 PORT=8000 bash start.sh   # sees the 4B model and picks config/sophon_real
 
 The 4B brain keeps turn-taking, back-channels, barge-in and sound tags, but it knows and reasons much less than the 32B brain and can state wrong facts with confidence. Use it for local demos, companions and characters, and turn-taking research; use the 32B build when answers must be right. Details: [model card](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash).
 
+## BF16 thinker (no FP8 support)
+
+[Sophon-Realtime-32B-Flash-BF16](https://huggingface.co/adventists-ai/Sophon-Realtime-32B-Flash-BF16) ([ModelScope](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-32B-Flash-BF16)) holds the unquantized BF16 thinker that the FP8 thinker above was quantized from, with the same talker and voices. Use it on hardware without FP8 support (for example Ascend NPUs) or for your own quantization. The BF16 thinker alone needs about 64 GB, so it usually runs with tensor parallelism over two devices: set `tensor_parallel_size: 2` and `devices: '0,1'` for stage 0 in your config. Checked on two H100s: loads, answers in real time, first audio 0.21–0.27 s. On one 80 GB GPU, use the FP8 release.
+
 ## Flash-4bit: one 32 GB GPU
 
 [Sophon-Realtime-32B-Flash-4bit](https://huggingface.co/adventists-ai/Sophon-Realtime-32B-Flash-4bit) is this build with the thinker compressed to 4-bit
@@ -110,6 +114,12 @@ python client_example.py --wav my_question.wav --lang en --voice alice
 `model/` (thinker, voice stage, voices) · `plugin/` (vLLM-Omni plugin `sophon_realtime`) · `config/` (deploy config, system prompt, VAD) · `examples/`
 
 License: code Apache-2.0; model weights Apache-2.0, see `NOTICE` for sources.
+
+## Community-maintained Ascend deployment
+
+See the [910C HTTP deployment notes](../community/ascend/README.md) for the
+community-maintained BF16 TP2 recipe, tested environment, validation results,
+and limitations. The core maintainers do not have Ascend hardware to test it.
 
 ## HTTP audio benchmarking
 

@@ -11,6 +11,7 @@
 ## 配置要求
 - Apple 芯片（M1 及以后），macOS 14 及以上
 - **推荐 36 GB 及以上统一内存**；32 GB 关掉其他程序也能跑（对话时模型约占 26 GB）
+- **16–24 GB 的 Mac**：用 4B 版（见下文，对话时约占 11 GB）
 - 约 30 GB 空闲磁盘（模型约 24 GB）
 - 麦克风：Mac Studio、Mac mini 没有内置麦克风，需要插 USB 麦克风或耳机。用外放没问题，已内置回音消除
 
@@ -26,6 +27,16 @@ bash mac/install.sh
 这份权重就是 Flash-4bit 无损重新打包成的 MLX 格式。已经下载过显卡版 [Sophon-Realtime-32B-Flash-4bit](https://modelscope.cn/models/AdventistsAI/Sophon-Realtime-32B-Flash-4bit) 的话，用 `convert.py 源目录 目标目录` 约 1 分钟就能转出同样的文件。
 
 下载中断了，再运行一次安装命令即可续传。
+
+### 4B 版：16 GB 的 Mac（1.5.0 新增）
+```bash
+SIZE=4B bash mac/install.sh   # 下载 Sophon-Realtime-4B-Flash-MLX（约 9 GB）到 ~/sophon-mac/models-4b
+~/sophon-mac/sophon-4b        # 参数和 sophon 一样
+```
+[Sophon-Realtime-4B-Flash-MLX](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash-MLX) 是大脑语言模型用 8 位的 [Sophon-Realtime-4B-Flash](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash)。
+你说完 0.3–0.5 秒开口（M4 Max），约占 11 GB 内存，但知识和推理比 32B 弱很多（见模型卡）。
+它用服务器版的四选项话轮问题（`config.json` 里 `"turn_question": "separate"`）：Smart Turn 抽样上英 / 中 90.0 / 89.7%，用 32B 版的短问法只有 72 / 74%。
+两个版本可以同时装。`convert.py 源目录 目标目录 --bits 8` 能从显卡版仓库转出同样的文件。测试时把 MLX 内存限制在 10.5 GB（16 GB Mac 给 GPU 的量），还没在真实的 16 GB Mac 上试过。
 
 ## 开始对话
 ```bash

@@ -60,14 +60,21 @@ https://github.com/user-attachments/assets/4d6c74f5-3bbf-4dc2-8b11-f90ff85de4a2
 
 ## 最新进展
 
+- **2026-11-19 · 酒馆（SillyTavern）插件**：在酒馆里和角色实时通话，可以随时打断，每个角色一个（可克隆的）声音，通话内容写回聊天；用自己的显卡（4B 一张 24 GB 卡）或 API。[sophon-sillytavern](https://github.com/adventists-ai/sophon-sillytavern) · [演示](https://x.com/BKJinAI/status/2123275865257807933)
+- **2026-11-18 · v1.5：4B 版上更小的机器**——[Tag-4B-W4](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag-W4) 一张 24 GB 显卡就能跑（4 位大脑，占用约 21 GB；语音和声音标签不变），[Mac 4B 版](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash-MLX) 16 GB 内存的 Apple 芯片 Mac 就能跑（MLX；你说完 0.3–0.5 秒开口）。[详情](#更小的机器15-新增)
 - **2026-11-16 · v1.4：Sophon-Realtime 4B 版**——Tag、Flash、E2E 换上 4B 大脑，一张消费级显卡就能跑（Flash 24 GB；Tag、E2E 32 GB）。全双工接话和声音标签保留（Full-Duplex-Bench v1.0：Tag 94.3、E2E 92.3、Flash 87.7）；知识比 32B 少很多（VoiceBench 62.4）。[详情](#4b-版14-新增) · [Tag](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag) · [Flash](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash) · [E2E](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-E2E)
 - **2026-11-14 · 没有显卡也能用**：在线 API 开放试用，兼容 OpenAI Realtime，三个版本都能调用；注册就送 3 小时免费对话。[控制台](https://api.adventists.cn/console/) · [接口文档](https://api.adventists.cn/console/docs)
 - **2026-11-13 · Mac 版上线**：Flash-4bit 可以在 Apple 芯片的 Mac 上本地运行（MLX，推荐 36 GB 及以上内存），全双工，支持话轮判断、打断和回音消除；你说完约 1 秒开口。[mac/](mac/README_CN.md) · [权重](https://modelscope.cn/models/AdventistsAI/Sophon-Realtime-32B-Flash-4bit-MLX)
 - **2026-11-13 · v1.2：长回复完整说完**，Tag、Flash、E2E 三个版本都不再限制语音时长；同时发布 **Flash-4bit**，一张 32 GB 显卡就能跑。[发布说明](https://github.com/adventists-ai/sophon-realtime/releases/tag/v1.2.0) · [Flash-4bit](flash/README_CN.md#flash-4bit一张-32-gb-显卡)
 - **2026-11-11 · v1.1：零样本声音克隆**，Tag 版和 Flash 版均已支持。几秒钟的录音，就能用这个声音和你实时对话。[看演示视频](#零样本声音克隆v11-新增)
 - **2026-11-11 · E2E 成为正式版本，单卡即可运行**，单路首包约 0.25 秒；也能像 Tag、Flash 一样用 vLLM-Omni 部署。[详情](#e2e)
+
+<details><summary>更早的进展</summary>
+
 - **2026-11-09 · 在线体验上线**：[魔搭创空间](https://www.modelscope.cn/studios/AdventistsAI/Sophon-Realtime)；**Live 模式**同步开源（兼容 OpenAI GPT-Live，查询类任务交给你自己的后端，边说边等结果）。[Live 模式](live/README_CN.md)
 - **2026-11-08 · v1.0：** Tag、Flash、E2E 三个版本首次开源发布。
+
+</details>
 
 每个版本（包括修复版）的详细改动：[更新记录](CHANGELOG.md) · [GitHub Releases](https://github.com/adventists-ai/sophon-realtime/releases)
 
@@ -103,6 +110,17 @@ https://github.com/user-attachments/assets/4d6c74f5-3bbf-4dc2-8b11-f90ff85de4a2
 | 权重 | [魔搭](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag) · [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag) | [魔搭](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash) · [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash) | [魔搭](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-E2E) · [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-E2E) |
 
 4B 大脑保留了对话能力（接话、附和、被打断就停、声音标签比例和标准答案一样），但知识和推理弱很多：VoiceBench 62.4（32B：82.8），Big Bench Audio 44.3%（32B：81.8%）。适合本地演示、陪伴和角色对话、话轮研究；需要回答准确时用 32B 版或[在线 API](https://api.adventists.cn/console/)。`start.sh` 识别到 4B 模型会自动选它的配置。
+
+#### 更小的机器（1.5 新增）
+
+| | **Tag-4B-W4** | **Mac 4B 版**（Flash-4B 的 MLX 版） |
+|---|---|---|
+| 硬件 | 一张 24 GB 显卡（4090 / 3090 一档，占用约 21 GB） | 16 GB 及以上内存的 Apple 芯片 Mac（占用约 11 GB） |
+| 改了什么 | 大脑的语言模型用 4 位（GPTQ W4A16）；语音、声音标签和速度与 Tag-4B 相同 | 大脑的语言模型用 8 位；你说完 0.3–0.5 秒开口（M4 Max） |
+| 安装 | 在 `tag/` 里 `SIZE=4B-W4 bash install.sh` | `SIZE=4B bash mac/install.sh` |
+| 权重 | [魔搭](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag-W4) · [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag-W4) | [魔搭](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash-MLX) · [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash-MLX) |
+
+两者都是把显存 / 内存限制在目标机器的大小下测得的（H100 按 24 GB 预算；M4 Max 把 MLX 限制在 16 GB Mac 给 GPU 的量），还没在真实的 24 GB 显卡和 16 GB Mac 上测过，欢迎反馈。与全精度版的对比见模型卡。
 
 ## 多语言
 
@@ -161,7 +179,7 @@ python client_example.py --wav my_question.wav --lang zh --voice chelsie
 
 两者都提供 `ws://HOST:PORT/v1/realtime`（全双工，OpenAI Realtime 风格）和 `POST /v1/chat/completions`（语音进，文字 + 语音出）。详见 [tag/README_CN.md](tag/README_CN.md) · [flash/README_CN.md](flash/README_CN.md)。
 
-**Mac**（Apple 芯片，推荐 36 GB 及以上统一内存；用 MLX 本地运行）：
+**Mac**（Apple 芯片，推荐 36 GB 及以上统一内存；用 MLX 本地运行；16 GB 的 Mac 用 4B 版：`SIZE=4B bash mac/install.sh`）：
 
 ```bash
 cd sophon-realtime && bash mac/install.sh   # 安装环境并下载 Sophon-Realtime-32B-Flash-4bit-MLX（约 24 GB，国内自动走魔搭）
@@ -215,6 +233,10 @@ E2E 版有两种部署方式，权重相同、声音相同：自研引擎（[doc
 ## 微调
 
 可以在一张 80 GB 显卡上用 [ms-swift](https://github.com/modelscope/ms-swift) 以 LoRA 方式调整大脑（人设、语气、领域知识、工具调用），声音、声音标签和接话能力都会保留。详见 [finetune/](finetune/README_CN.md)。
+
+## 生态集成
+
+- **[酒馆 SillyTavern](https://github.com/adventists-ai/sophon-sillytavern)**：和角色全双工语音通话。在酒馆 → 扩展 → 安装扩展里安装，连接自己的 Sophon-Realtime 服务器或 API。
 
 ## 同一团队的其他项目
 

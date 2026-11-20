@@ -60,14 +60,21 @@ https://github.com/user-attachments/assets/1d9442ef-84b0-45a3-acd4-2d05a9562397
 
 ## News
 
+- **2026-11-19 · SillyTavern plugin:** call your character in real time from SillyTavern, with interruptions, a cloned voice per character and the call written back into the chat; your own GPU (4B on one 24 GB card) or the API. [sophon-sillytavern](https://github.com/adventists-ai/sophon-sillytavern) · [demo](https://x.com/BKJinAI/status/2123275865257807933)
+- **2026-11-18 · v1.5: 4B on smaller machines** — [Tag-4B-W4](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag-W4) runs on one 24 GB GPU (4-bit brain, about 21 GB; speech and sound tags unchanged), and [Mac 4B](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash-MLX) on Apple silicon Macs with 16 GB (MLX; it starts speaking 0.3–0.5 s after you stop). [Details](#smaller-machines-new-in-15)
 - **2026-11-16 · v1.4: Sophon-Realtime 4B** — Tag, Flash and E2E with a 4B brain, on one consumer GPU (Flash 24 GB; Tag and E2E 32 GB). Full-duplex turn-taking and sound tags carry over (Full-Duplex-Bench v1.0: Tag 94.3, E2E 92.3, Flash 87.7); much less knowledge than 32B (VoiceBench 62.4). [Details](#4b-builds-new-in-14) · [Tag](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag) · [Flash](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash) · [E2E](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-E2E)
 - **2026-11-14 · Try it without a GPU:** hosted API, OpenAI Realtime-compatible, with all three builds; sign up and get 3 hours of free voice chat. [Console](https://api.adventists.ai/console/) · [API docs](https://api.adventists.ai/console/docs)
 - **2026-11-13 · Sophon-Realtime on Mac:** Flash-4bit runs locally on Apple silicon (MLX, 36 GB+ recommended), full duplex with turn-taking, barge-in and echo cancellation; it starts speaking about 1 s after you stop. [mac/](mac/README.md) · [weights](https://huggingface.co/adventists-ai/Sophon-Realtime-32B-Flash-4bit-MLX)
 - **2026-11-13 · v1.2: long replies are spoken to the end** in Tag, Flash and E2E, however long they are; plus **Flash-4bit** for one 32 GB GPU. [Release notes](https://github.com/adventists-ai/sophon-realtime/releases/tag/v1.2.0) · [Flash-4bit](flash/README.md#flash-4bit-one-32-gb-gpu)
 - **2026-11-11 · v1.1: zero-shot voice cloning** in Tag and Flash: a few seconds of audio and it talks to you in that voice, in real time. [Watch the demo](#zero-shot-voice-cloning-new-in-v11)
 - **2026-11-11 · E2E becomes a full build on one GPU**, with first audio in about 0.25 s; it can also be served by vLLM-Omni like Tag and Flash. [Details](#e2e)
+
+<details><summary>Older news</summary>
+
 - **2026-11-09 · Try it online** on [ModelScope Studio](https://www.modelscope.ai/studios/AdventistsAI/Sophon-Realtime), and **Live mode** (OpenAI GPT-Live compatible: hands lookups to your own backend while it keeps talking) is open source. [Live mode](live/README.md)
 - **2026-11-08 · v1.0:** first open-source release of the Tag, Flash and E2E builds.
+
+</details>
 
 Every release, including fixes: [CHANGELOG](CHANGELOG.md) · [GitHub Releases](https://github.com/adventists-ai/sophon-realtime/releases)
 
@@ -103,6 +110,17 @@ The same three builds with a 4B brain ([DuplexJev-4B-Para](https://huggingface.c
 | Weights | [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag) · [ModelScope](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag) | [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash) · [ModelScope](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash) | [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-E2E) · [ModelScope](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-E2E) |
 
 The 4B brain keeps the conversation skills (turn-taking, back-channels, barge-in, sound tags at the same rate as the reference data) but knows and reasons much less: VoiceBench 62.4 (32B: 82.8), Big Bench Audio 44.3% (32B: 81.8%). Use it for local demos, companions and characters, and turn-taking research; use 32B or the [hosted API](https://api.adventists.ai/console/) when answers must be right. `start.sh` sees a 4B model and picks its config.
+
+#### Smaller machines (new in 1.5)
+
+| | **Tag-4B-W4** | **Mac 4B** (Flash-4B on MLX) |
+|---|---|---|
+| Runs on | one 24 GB GPU (RTX 4090 / 3090 class; uses ~21 GB) | an Apple silicon Mac with 16 GB or more (uses ~11 GB) |
+| What changes | the brain's language model in 4 bits (GPTQ W4A16); speech, sound tags and speed as Tag-4B | the brain's language model in 8 bits; starts speaking 0.3–0.5 s after you stop (M4 Max) |
+| Install | `SIZE=4B-W4 bash install.sh` in `tag/` | `SIZE=4B bash mac/install.sh` |
+| Weights | [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag-W4) · [ModelScope](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag-W4) | [HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash-MLX) · [ModelScope](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash-MLX) |
+
+Both were measured with memory held to the target (an H100 with the 24 GB budget; an M4 Max with MLX capped at what a 16 GB Mac gives the GPU), not yet on a physical 24 GB card or 16 GB Mac: reports are welcome. Comparisons with the full-precision builds are on the model cards.
 
 ## Languages
 
@@ -161,7 +179,7 @@ python client_example.py --wav my_question.wav --lang en --voice chelsie
 
 Both serve `ws://HOST:PORT/v1/realtime` (full duplex, OpenAI-Realtime-style) and `POST /v1/chat/completions` (audio in, text + audio out). Details: [tag/README.md](tag/README.md) · [flash/README.md](flash/README.md).
 
-**Mac** (Apple silicon, 36 GB+ unified memory recommended; runs locally with MLX):
+**Mac** (Apple silicon, 36 GB+ unified memory recommended; runs locally with MLX; 16 GB Macs: the 4B build, `SIZE=4B bash mac/install.sh`):
 
 ```bash
 cd sophon-realtime && bash mac/install.sh   # environment + Sophon-Realtime-32B-Flash-4bit-MLX (~24 GB)
@@ -215,6 +233,10 @@ E2E can be served in two ways, with the same weights and the same voice: by our 
 ## Fine-tuning
 
 Adapt the brain (persona, tone, domain knowledge, tool use) with LoRA in [ms-swift](https://github.com/modelscope/ms-swift) on one 80 GB GPU. The voice, expressive sound tags and turn-taking are kept. See [finetune/](finetune/README.md).
+
+## Integrations
+
+- **[SillyTavern](https://github.com/adventists-ai/sophon-sillytavern)**: full-duplex voice calls with your character. Install from SillyTavern → Extensions → Install extension; point it at your own Sophon-Realtime server or the API.
 
 ## From the same team
 

@@ -43,6 +43,24 @@ GPU=0 PORT=8000 bash start.sh   # 识别到 4B 模型，自动用 config/sophon_
 
 4B 大脑保留了接话、附和、被打断就停和声音标签，但知识和推理比 32B 弱很多，会很自信地说错事实。适合本地演示、陪伴和角色对话、话轮研究；需要回答准确时用 32B 版。详见[模型卡](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag)。
 
+## 4B-W4 版：一张 24 GB 卡（1.5.0 新增）
+
+[Sophon-Realtime-4B-Tag-W4](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag-W4)（[HF](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag-W4)）是大脑语言模型用 4 位（GPTQ W4A16）的 Tag-4B，一张 24 GB 卡（4090 / 3090 一档）就能跑（占用约 21 GB）。
+
+```bash
+SIZE=4B-W4 bash install.sh
+GPU=0 PORT=8000 bash start.sh   # 识别到 4 位 4B 模型，自动用 config/sophon_realtime_tag_4b_w4.yaml（4 路对话，不收图片）
+```
+
+| | 4B-W4 | 4B（bf16） |
+|---|---|---|
+| 显存 | 约 21 GB | 约 27 GB |
+| CMMLU / MMLU-Pro（各 600 题） | 69.5 / 42.7 | 71.3 / 44.3 |
+| 声音标签合法 / 语音错误率 中、英 | 99.3% / 3.2%、0.7% | 100% / 3.1%、1.9% |
+| 首包，2 路同时 | 0.28–0.38 秒 | 0.29–0.38 秒 |
+
+在 H100 上按 24 GB 配置的显存预算测得，还没在真实的 24 GB 卡上测过（同时接显示器的卡可用显存更少）。详见[模型卡](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag-W4)。
+
 ## 零样本音色克隆
 
 给一段任意声音的录音，就能让智子用这个声音和你对话。不用微调，不用重启。

@@ -86,7 +86,7 @@ CUDA_VISIBLE_DEVICES=0 swift sft \
 ```
 
 - `--adapters tag_swift` 表示从写标签 LoRA 接着训。LoRA 的秩固定是 16（alpha 32），与自带的那一个相同。
-- `--freeze_vit / --freeze_aligner` 保持听觉编码器和投影器冻结。
+- `--freeze_vit true --freeze_aligner true` 与适配器能存下的内容一致：用了 `--adapters` 时，ms-swift 按适配器自己的配置决定训练哪些模块（只有大模型上的 LoRA），所以把这两个参数改成 `false` 不会生效，听觉编码器和投影器仍然冻结。想训练它们，先看下面的[新语言](#新语言)。
 - 显存实测（H100，样本长 2048 以内，batch 1）：单卡峰值约 65 GB；两张卡时 ms-swift 自动把模型切到两张卡上，每张约 34 GB。
 - 学习率 5e-5 是起点。数据少（几百条）时用 2e-5–5e-5、1–2 个 epoch；数据多可以适当调高。
 
@@ -98,6 +98,12 @@ CUDA_VISIBLE_DEVICES=0 swift infer \
   --adapters output/vx-xxx/checkpoint-yyy \
   --val_dataset my_eval.jsonl --temperature 0 --max_new_tokens 128
 ```
+
+### 新语言
+
+大模型上的 LoRA 能教模型用一门它已经听得懂的语言来写，但解决不了听觉编码器听不清的语言：模型会写出通顺的句子，却把词听成发音相近的错词。以希腊语为例，只训练大模型 LoRA，FLEURS 词错误率从 59.5% 降到 45.8%（[#11](https://github.com/adventists-ai/sophon-realtime/issues/11)）。
+
+在 ms-swift 里也可以同时训练投影器或编码器（在适配器配置里加 `"modules_to_save": ["multi_modal_projector"]`，并把原投影器权重拷进适配器，做法见 #11），但**训出来的结果暂时无法部署**：服务端只加载 LoRA 权重，`to-vllm` 会拒绝带 `modules_to_save` 的适配器。训练并导出听觉部分的正式做法计划在 v2 之后提供。发声部分只支持各版本列出的语言；其他语言请把思考器接到外部 TTS。
 
 ## 5. 导出和部署
 

@@ -123,6 +123,11 @@ class Brain:
                                      ce([tc.codec_pad_id, tc.codec_bos_id])], 1)
         self.role = self.te(self.tts.tokenizer.encode("<|im_start|>assistant\n"))
         self.cache = make_prompt_cache(self.lm); self.sig = []; self._emb = {}
+        # Turn question style, set per model in the weights' config.json: "short" (default; the two-option question inside the reply
+        # context, tuned on 32B) or "separate" (the server plugin's four-option question in its own prompt; the 4B model needs it:
+        # Smart Turn sample, 4B 8-bit: short 72 / 74 % vs separate 90 / 90 % en / zh).
+        mcfg = os.path.join(root, "config.json")
+        self.turn_style = (json.load(open(mcfg)).get("turn_question") if os.path.exists(mcfg) else None) or "short"
 
     def embed(self, key, a):
         if key not in self._emb:
@@ -206,6 +211,11 @@ class Brain:
         n = sig.index(("warm3", 0)) if ("warm3", 0) in sig else 0
         self.lm(mx.array([ids[:n]]), cache=self.cache, input_embeddings=E[:n][None]); mx.eval([c.state for c in self.cache]); self.sig = sig[:n]
         self._emb.clear()
+
+    def turn_p(self, history, user, said, cancel=None, full=False):
+        """P(finished), P(backchannel) for the user audio, in the model's turn question style."""
+        if self.turn_style == "separate": return self.turn_check(user[0], user[1], said)
+        return self.turn_check_shared(history, user, cancel=cancel, full=full)
 
     def turn_check(self, k, audio, said):
         text, perm = turn_question(self.lang, said)
@@ -341,8 +351,8 @@ class Session:
                 if kind == "check":
                     k, audio, said, gen, thr, idx, t_sil, sg = arg
                     t = time.time()
-                    if SHARED: pf, pb = self.b.turn_check_shared(list(self.history), (k, audio), cancel=lambda: sg != self.sgen,
-                                                                  full=self.cut is not None and time.time() - self.cut["t"] < BC_WINDOW + FALLBACK_S)
+                    if SHARED: pf, pb = self.b.turn_p(list(self.history), (k, audio), said, cancel=lambda: sg != self.sgen,
+                                                      full=self.cut is not None and time.time() - self.cut["t"] < BC_WINDOW + FALLBACK_S)
                     else: pf, pb = self.b.turn_check(k, audio, said)
                     if pf is None:
                         with self.lock: self.inflight = False if self.inflight == k else self.inflight

@@ -7,6 +7,7 @@ no cloud, and no speech-to-text step in between.
 ## Requirements
 - Mac with Apple silicon (M1 or later), macOS 14 or later
 - **36 GB or more unified memory recommended**; 32 GB works if other apps are closed (the model uses about 26 GB while talking)
+- **16–24 GB Mac:** use the 4B build (below; about 11 GB while talking)
 - About 30 GB free disk (the model is about 24 GB)
 - A microphone. Mac Studio and Mac mini have none built in, so plug in a USB microphone or a headset. Speakers are fine: echo cancellation is built in
 
@@ -19,6 +20,17 @@ The installer sets up its own Python environment in `~/sophon-mac` and downloads
 with Chinese package mirrors when Hugging Face is not reachable). Those are the Flash-4bit weights repacked losslessly for MLX; if you already have
 the CUDA repo [Sophon-Realtime-32B-Flash-4bit](https://huggingface.co/adventists-ai/Sophon-Realtime-32B-Flash-4bit), `convert.py SRC DST`
 produces the same files from it in about a minute. If the download is interrupted, run the installer again to resume.
+
+### 4B build: 16 GB Macs (new in 1.5.0)
+```bash
+SIZE=4B bash mac/install.sh   # downloads Sophon-Realtime-4B-Flash-MLX (about 9 GB) into ~/sophon-mac/models-4b
+~/sophon-mac/sophon-4b        # same options as sophon
+```
+[Sophon-Realtime-4B-Flash-MLX](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash-MLX) is [Sophon-Realtime-4B-Flash](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Flash) with the brain's language model in 8 bits.
+It starts speaking 0.3–0.5 s after you stop (M4 Max) and needs about 11 GB, but it knows and reasons much less than 32B (see the model card).
+It uses the server's four-option turn question (`"turn_question": "separate"` in its `config.json`): on a Smart Turn sample it scores 90.0 / 89.7% (en / zh),
+against 72 / 74% with the 32B build's short question. Both builds can be installed side by side. `convert.py SRC DST --bits 8` builds the same layout
+from the CUDA repo. Tested with MLX memory capped at 10.5 GB (what a 16 GB Mac gives the GPU), not yet on a physical 16 GB Mac.
 
 ## Talk
 ```bash

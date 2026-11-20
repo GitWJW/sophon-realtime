@@ -85,5 +85,5 @@ stages:
 session_mode: duplex
 duplex_session:
   max_sessions: 32
-  idle_ttl_s: 60
+  idle_ttl_s: 600
   server_vad_model_path: __HERE__/config/silero_vad.onnx

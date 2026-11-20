@@ -82,6 +82,7 @@ CUDA_VISIBLE_DEVICES=0 swift sft \
 ```
 
 - `--adapters tag_swift` continues the tag LoRA. Its rank is fixed at 16 (alpha 32).
+- `--freeze_vit true --freeze_aligner true` match what the adapter can hold: with `--adapters`, ms-swift takes the trainable modules from the adapter's own config (LoRA on the LLM only), so setting either flag to `false` has no effect. The audio encoder and the projector stay frozen. See [New languages](#new-languages) before trying to train them.
 - Measured on H100, with samples up to 2048 tokens and batch size 1: about 65 GB peak on one GPU. With two GPUs, ms-swift splits the model and uses about 34 GB on each.
 - 5e-5 is a starting point. For a few hundred samples, use 2e-5 to 5e-5 for 1–2 epochs.
 
@@ -93,6 +94,12 @@ CUDA_VISIBLE_DEVICES=0 swift infer \
   --adapters output/vx-xxx/checkpoint-yyy \
   --val_dataset my_eval.jsonl --temperature 0 --max_new_tokens 128
 ```
+
+### New languages
+
+LoRA on the LLM teaches the model to write a language it already hears. It cannot fix a language the audio encoder hears poorly: the model then writes fluent text with similar-sounding wrong words. For Greek, LoRA on the LLM brought the word error rate on FLEURS from 59.5% to 45.8% ([#11](https://github.com/adventists-ai/sophon-realtime/issues/11)).
+
+Training the projector or the encoder as well is possible in ms-swift (add `"modules_to_save": ["multi_modal_projector"]` to the adapter config and copy the base projector weights into the adapter, as in #11), but **the result cannot be served yet**: `to-vllm` rejects adapters with `modules_to_save`, because the server attaches LoRA weights only. A supported path to train and export the audio side is planned after v2. The talkers speak only the languages listed for each build; for other languages, pair the thinker with an external TTS.
 
 ## 5. Export and serve
 

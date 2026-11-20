@@ -45,6 +45,24 @@ GPU=0 PORT=8000 bash start.sh   # sees the 4B model and picks config/sophon_real
 
 The 4B brain keeps turn-taking, back-channels, barge-in and sound tags, but it knows and reasons much less than the 32B brain and can state wrong facts with confidence. Use it for local demos, companions and characters, and turn-taking research; use the 32B build when answers must be right. Details: [model card](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag).
 
+## 4B-W4: one 24 GB GPU (new in 1.5.0)
+
+[Sophon-Realtime-4B-Tag-W4](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag-W4) ([ModelScope](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Tag-W4)) is Tag-4B with the brain's language model in 4 bits (GPTQ W4A16), for one 24 GB GPU (RTX 4090 / 3090 class; it uses about 21 GB).
+
+```bash
+SIZE=4B-W4 bash install.sh
+GPU=0 PORT=8000 bash start.sh   # sees the 4-bit 4B model and picks config/sophon_realtime_tag_4b_w4.yaml (4 conversations, no image input)
+```
+
+| | 4B-W4 | 4B (bf16) |
+|---|---|---|
+| GPU memory | ~21 GB | ~27 GB |
+| CMMLU / MMLU-Pro (600 questions each) | 69.5 / 42.7 | 71.3 / 44.3 |
+| Sound tags valid / speech error rate zh, en | 99.3% / 3.2%, 0.7% | 100% / 3.1%, 1.9% |
+| First audio, 2 users | 0.28–0.38 s | 0.29–0.38 s |
+
+Measured on an H100 with the 24 GB config's memory budget; not yet on a physical 24 GB card (a GPU that also drives a display has less free memory). Details: [model card](https://huggingface.co/adventists-ai/Sophon-Realtime-4B-Tag-W4).
+
 ## Zero-shot voice cloning
 
 Give it a short clip of any voice and talk to Sophon in that voice. No fine-tuning, no restart.

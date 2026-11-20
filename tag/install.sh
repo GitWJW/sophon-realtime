@@ -1,6 +1,6 @@
 #!/bin/bash
 # Sophon-Realtime-32B-Tag (vLLM-Omni) — one-time install: Python 3.12 venv + vLLM 0.30 + vLLM-Omni 0.30 + the Sophon plugin.
-# usage: bash install.sh          env: SIZE=4B (the 4B model, one 32 GB GPU)  PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple (mirror)  NO_TRT=1 (skip TensorRT)  SKIP_DOWNLOAD=1 (weights already in ./model)
+# usage: bash install.sh          env: SIZE=4B (the 4B model, one 32 GB GPU) or SIZE=4B-W4 (4-bit thinker, one 24 GB GPU)  PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple (mirror)  NO_TRT=1 (skip TensorRT)  SKIP_DOWNLOAD=1 (weights already in ./model)
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd); cd "$HERE"
 IDX=${PIP_INDEX:+--index-url $PIP_INDEX}
@@ -22,7 +22,8 @@ uv pip install $IDX -e ./plugin
 # model weights (~42 GB) -> ./model ; skip with SKIP_DOWNLOAD=1 or point start.sh at MODEL_DIR=...
 if [ "${SKIP_DOWNLOAD:-0}" != 1 ] && [ ! -f model/config.json ]; then
   uv pip install $IDX modelscope
-  modelscope download --model ${MODEL_REPO:-AdventistsAI/Sophon-Realtime-${SIZE:-32B}-Tag} --local_dir model
+  case "${SIZE:-32B}" in 4B-W4|4b-w4) REPO=Sophon-Realtime-4B-Tag-W4;; *) REPO=Sophon-Realtime-${SIZE:-32B}-Tag;; esac
+  modelscope download --model ${MODEL_REPO:-AdventistsAI/$REPO} --local_dir model
 fi
 python -c "import vllm, vllm_omni, sophon_realtime; print('OK vllm', vllm.__version__, '| vllm-omni', vllm_omni.__version__, '| plugin', sophon_realtime.__version__)"
 echo "INSTALL_DONE — now: bash start.sh"

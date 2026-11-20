@@ -62,6 +62,10 @@ GPU=0 PORT=8000 bash start.sh   # 识别到 4B 模型，自动用 config/sophon_
 
 4B 大脑保留了接话、附和、被打断就停和声音标签，但知识和推理比 32B 弱很多，会很自信地说错事实。适合本地演示、陪伴和角色对话、话轮研究；需要回答准确时用 32B 版。详见[模型卡](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-4B-Flash)。
 
+## BF16 思考器（不支持 FP8 的硬件）
+
+[Sophon-Realtime-32B-Flash-BF16](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-32B-Flash-BF16)（[HF](https://huggingface.co/adventists-ai/Sophon-Realtime-32B-Flash-BF16)）是未量化的 BF16 思考器，上面的 FP8 思考器就是由它量化而来，发声部分和音色相同。适合不支持 FP8 的硬件（例如昇腾 NPU），或者想自己做量化。BF16 思考器本身约需 64 GB，一般用两张卡做张量并行：在配置里给第 0 阶段设 `tensor_parallel_size: 2`、`devices: '0,1'`。已在两张 H100 上验证：能加载、实时对话正常，首包 0.21–0.27 秒。单张 80 GB 显卡请继续用 FP8 版。
+
 ## Flash-4bit：一张 32 GB 显卡
 
 [Sophon-Realtime-32B-Flash-4bit](https://modelscope.cn/models/AdventistsAI/Sophon-Realtime-32B-Flash-4bit) 是把本版本的思考器压成 4 位权重的版本，
