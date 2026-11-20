@@ -1,7 +1,8 @@
 # Experimental Ascend 910C: BF16 thinker TP2 on logical devices 0,1.
 # Talker and code2wav share logical device 1. Requires an unquantized BF16 checkpoint.
 # Community-maintained; core maintainers cannot test this on Ascend hardware.
-# HTTP validated at PR revision 5c73a54; see README.md for scope and limits.
+# Official BF16 HTTP validated at f37547c; earlier reconstruction at 5c73a54.
+# See README.md for scope and limits.
 async_chunk: true
 connectors:
   connector_of_shared_memory:

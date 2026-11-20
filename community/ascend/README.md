@@ -9,9 +9,10 @@
 This recipe documents HTTP streaming inference experiments with the
 32B Flash model on one physical 910C card exposing two NPU devices. It does not
 establish support for every Flash variant or full-duplex multi-session serving.
-The configuration was exercised with the 1.4.0 plugin at PR revision
-`5c73a54fccfe9b8341fba46d7146448f18c64f1e`. Historical and current-revision
-measurements are reported separately below.
+The configuration was exercised with the 1.4.0 plugin at source revisions
+`5c73a54fccfe9b8341fba46d7146448f18c64f1e` (earlier reconstructed BF16) and
+`f37547cd9047b50bd7c1f5fa19fbe303cffedec3` (official BF16).
+The results are recorded separately below.
 
 ## Tested environment
 
@@ -29,39 +30,74 @@ present. This is a historical environment record, not a clean-checkout
 reproducibility claim. Pin image digests and record host driver/CANN versions when
 reproducing; an image tag alone does not define the complete runtime.
 
-## Official BF16 checkpoint follow-up
+## Official BF16 validation (2026-11-20)
 
-The maintainers have announced plans to publish the original BF16 thinker.
-The measurements recorded here used reconstructed BF16 thinker weights.
-Validation with the official BF16 checkpoint is pending and will be recorded
-separately once the weights are available. Existing measurements must not be
-presented as results for that checkpoint.
+The official BF16 checkpoint from ModelScope loaded successfully after the
+maintainers restored the missing `thinker/audio/` assets. No audio assets were
+borrowed from the older checkpoint. Validation used source `f37547c`, Flash plugin
+1.4.0, duplexjev-vllm 0.3.0, PyTorch 2.10.0+cpu, torch-npu 2.10.0.post4,
+vLLM 0.30.0 and vLLM-Omni 0.30.0, with the HTTP TP2 configuration in this directory.
+
+Five consecutive smoke requests returned text and audio. The tester reported
+consistent text/audio, no noise and no abnormal pauses in those five samples.
+This is a limited subjective check, not formal quality evaluation. The first
+smoke request took 10.46 s to first audio; subsequent requests took 0.79-0.89 s.
+These smoke timings are excluded from the benchmark results below.
+
+| In-flight cap | Successful requests | First audio receipt P50 / P90 (s) | Stall P50 / P90 (s) | Audio seconds / wall second |
+| --- | --- | --- | --- | --- |
+| 1 | 40/40 | 0.806 / 0.854 | 0.949 / 1.235 | 1.050 |
+| 4 | 40/40 | 1.456 / 1.673 | 3.524 / 5.272 | 2.440 |
+| 8 | 40/40 | 1.727 / 2.338 | 4.331 / 7.052 | 3.796 |
+| 4, extended run | 200/200 | 1.482 / 1.636 | 2.996 / 4.789 | 2.361 |
+
+Each run used five excluded warmups, `hello_zh.wav` (6.28 seconds), the repository
+Chinese system prompt, voice `chelsie`, `max_tokens=300` and zero initial playback
+buffer. All 320 measured requests succeeded. The extended run lasted 436.97 s
+(7.28 minutes). The supplied server log had no ERROR, Traceback, out-of-memory or
+EngineDeadError matches; warnings were present. All thirteen benchmark tests passed.
+
+First-audio receipt is timestamped before WAV decoding. Stall is simulated
+playback underrun with zero initial buffer, not measured browser playback.
+Concurrency 4 and 8 produced substantial underrun: successful completion does
+not establish smooth real-time serving at those loads. The older first-audio
+metric below includes decoding, and the runs are not a controlled comparison.
+The official two-H100 observation is not a controlled hardware comparison either.
+
+The benchmark used commit `f80c13773276c8ffaa46257596c29b129180c295` with a clean
+worktree. Supplemental audio-file hashes match the prefixes supplied by the
+maintainers. Full local hashes, benchmark script hash and measurements are in the
+[validation record](ascend_910c_validation.json). These provenance records were
+collected after the run; unchanged files since measurement are not independently
+established. An immutable model revision and full-checkpoint checksums were not captured.
 
 ## Checkpoint prerequisite
 
-The tested source checkpoint was Sophon-Realtime-32B-Flash with compressed-tensors
-FP8 E4M3 per-output-channel weights and dynamic per-token FP8 activations. In the
-tested runtime, `aclnnDynamicQuantV2` rejected FP8 output and listed integer output
-types. Merely copying an FP8 tensor to NPU did not establish executable FP8 support.
+Use the official unquantized
+[Sophon-Realtime-32B-Flash-BF16](https://www.modelscope.cn/models/AdventistsAI/Sophon-Realtime-32B-Flash-BF16)
+checkpoint. It contains the original BF16 thinker; reconstruction is not required.
+Download the full model into a separate directory:
 
-This is not an end-to-end checkpoint conversion guide: the startup steps require
-a separately prepared and validated, unquantized BF16 checkpoint with the original layout:
-
-```text
-model/
-  config.json
-  thinker/
-  talker/
-  voices/
+```bash
+modelscope download --model AdventistsAI/Sophon-Realtime-32B-Flash-BF16 \
+  --local_dir /path/to/Sophon-Realtime-32B-Flash-BF16-Official
 ```
 
-The experiment reconstructed BF16 weights on CPU using `weight.float() *
-weight_scale.float()` for each symmetric channel-quantized matrix, then cast to
-BF16. This reconstructs approximate quantized weights, not the original BF16
-model. The resulting thinker contained 1,359 BF16 tensors totaling 62.51 GiB.
-Conversion tooling and numerical/quality validation are outside this documentation
-PR. Do not remove quantization metadata from an unchanged FP8 checkpoint or cast
-FP8 values without their scales. Setting `dtype: bfloat16` is not a conversion.
+Required layout includes `config.json`, `thinker/`, `talker/` and `voices/`.
+In particular, `thinker/audio/` must contain `config.json`,
+`preprocessor_config.json` and `model.safetensors`. An early BF16 upload omitted
+that directory; if using that download, fetch the restored official assets:
+
+```bash
+modelscope download --model AdventistsAI/Sophon-Realtime-32B-Flash-BF16 \
+  --include 'thinker/audio/*' \
+  --local_dir /path/to/Sophon-Realtime-32B-Flash-BF16-Official
+```
+
+Earlier experiments reconstructed approximate BF16 weights from FP8 on CPU.
+Those results below are historical, not results for the official BF16 checkpoint.
+The tested runtime rejected the dynamic FP8 activation path. Setting
+`dtype: bfloat16` does not convert an FP8 checkpoint; use the official BF16 release.
 
 ## Container checks
 
@@ -117,7 +153,7 @@ These are experimental budgets, not an OOM guarantee.
 
 ```bash
 cd /path/to/sophon-realtime/flash
-export SOPHON_MODEL=/path/to/Sophon-Realtime-32B-Flash-BF16
+export SOPHON_MODEL=/path/to/Sophon-Realtime-32B-Flash-BF16-Official
 export SOPHON_WARMUP=0
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
 
@@ -158,7 +194,7 @@ print("Audio structure check passed; listen to verify quality.")
 PY
 ```
 
-## Current-revision validation (2026-11-17)
+## Earlier reconstructed-BF16 validation (2026-11-17)
 
 The environment freeze identifies the Flash plugin at
 `5c73a54fccfe9b8341fba46d7146448f18c64f1e` (1.4.0). Engine revisions match the
